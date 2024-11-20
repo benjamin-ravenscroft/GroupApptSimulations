@@ -26,7 +26,6 @@ class Server{
         int n_patients = 0;
         Waitlist& waitlist;
         DischargeList& discharge_list;
-        int ext_prot;
         int max_caseload = 1; // max allowable caseload -> impacts freq (i.e., 1 = weekly, 2 = bi-weekly, 4 = monthly, etc.)
         bool logging = false; // variable to use to report if patients are on waitlist or not
 
