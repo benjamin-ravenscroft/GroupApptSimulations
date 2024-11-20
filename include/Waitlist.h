@@ -27,6 +27,7 @@ class Waitlist{
         void add_reassignment(Patient patient);
         std::pair<Patient, int> get_patient(int epoch);
         bool check_availability(int epoch);
+        bool check_class_availability(int c, int epoch);
     
     private:
         DischargeList& discharge_list;

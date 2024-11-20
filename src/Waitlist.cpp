@@ -61,19 +61,25 @@ void Waitlist::add_reassignment(Patient patient){
 
 bool Waitlist::check_availability(int epoch){
     for (auto & i : classes){
-        while (waitlist[i].size() > 0){
-            if (waitlist[i].front().first.get_age(epoch) < max_ax_age){
-                return true;
-            } else {
-                std::pair<Patient, int> pair = waitlist[i].front();
-                pair.first.set_discharge_time(epoch);
-                pair.first.set_age_out(1);
-                // std::cout << "Getting discharge list size: " << discharge_list.get_n_patients() << std::endl;
-                // std::cout << "Discharging patient from waitlist..." << std::endl;
-                discharge_list.add_patient(pair.first);
-                // std::cout << "Successfully discharged patient from waitlist." << std::endl;
-                waitlist[i].pop_front();
-            }
+        bool ret_val = check_class_availability(i, epoch);
+        if (ret_val){return true;}
+    }
+    return false;
+}
+
+bool Waitlist::check_class_availability(int c, int epoch){
+    while (waitlist[c].size() > 0) {
+        if (waitlist[c].front().first.get_age(epoch) < max_ax_age) {
+            return true;
+        } else {
+            std::pair<Patient, int> pair = waitlist[c].front();
+            pair.first.set_discharge_time(epoch);
+            pair.first.set_age_out(1);
+            // std::cout << "Getting discharge list size: " << discharge_list.get_n_patients() << std::endl;
+            // std::cout << "Discharging patient from waitlist..." << std::endl;
+            discharge_list.add_patient(pair.first);
+            // std::cout << "Successfully discharged patient from waitlist." << std::endl;
+            waitlist[c].pop_front();
         }
     }
     return false;
