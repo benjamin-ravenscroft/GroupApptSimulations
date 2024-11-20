@@ -47,7 +47,7 @@ void Server::process_epoch(int epoch){
     while (capacity > 0 & n_patients > 0) {
         Patient p = caseload.front();
         caseload.pop_front();
-        std::array<int, 2> results = p.process_patient(epoch, waitlist.len_waitlist());
+        std::array<int, 2> results = p.process_patient(epoch);
         capacity -= results[0];
         if (results[1] == 1 | results[1] == 2) { // if they have reached their service_max
             p.set_discharge_time(epoch);

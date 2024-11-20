@@ -17,7 +17,7 @@ class Patient{
 
         void add_appt(int epoch);
         void add_wait(int add_t);
-        std::array<int, 2> process_patient(int epoch, int wl_len);
+        std::array<int, 2> process_patient(int epoch);
 
         // setters
         void set_arrival_time(int t);
