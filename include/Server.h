@@ -21,7 +21,7 @@ class Server{
 
         void print_patients();
 
-    private:
+    protected:
         std::deque<Patient> caseload = std::deque<Patient>();
         int n_patients = 0;
         Waitlist& waitlist;
