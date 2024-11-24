@@ -11,9 +11,11 @@ class Server{
         Server(Waitlist &wl, DischargeList &dl);
         Server(int max_caseload, Waitlist &wl, DischargeList &dl);
 
-        virtual void add_patient(Patient &patient);
-        virtual void add_from_waitlist(int epoch);
-        virtual void process_extension(Patient patient, int epoch);
+        ~Server() {};
+
+        void add_patient(Patient &patient);
+        void add_from_waitlist(int epoch);
+        void process_extension(Patient patient, int epoch);
         virtual void process_epoch(int epoch);
 
         // setters

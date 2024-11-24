@@ -41,7 +41,7 @@ int Patient::check_attendance(int modality) {
     }
 }
 
-std::array<int, 2> Patient::process_patient(int epoch, int wl_len){
+std::array<int, 2> Patient::process_patient(int epoch){
     // results returns a 2-element array
     // results[0] = 1 if patient is treated, 0 if not
     // results[1] = 1 if patient is discharged, 2 if aged-out, 0 if still in service, -1 if not treated

@@ -17,13 +17,15 @@
 #include "Waitlist.h"
 #include "DischargeList.h"
 #include "Server.h"
+#include "GroupServer.h"
 #include "Reader_Writer.h"
 #include "WriteCSV.h"
 
 std::random_device rd;
 std::mt19937 rng(rd());
 
-Simulation::Simulation(int n_epochs, std::vector<int> clinicians, 
+Simulation::Simulation(int n_epochs, int n_servers,
+                        std::vector<int> n_group_servers, std::vector<float> group_size_props,
                         int max_caseload, double arr_lam,
                         std::vector<int> pathways, std::vector<double> wait_effects,
                         std::vector<double> modality_effects, std::vector<double> modality_policies,
@@ -34,7 +36,9 @@ Simulation::Simulation(int n_epochs, std::vector<int> clinicians,
                         DischargeList& dl, Waitlist& wl) : dl(dl), wl(wl) {
 
         Simulation::set_n_epochs(n_epochs);
-        Simulation::set_clinicians(clinicians);
+        Simulation::set_n_servers(n_servers);
+        Simulation::set_group_servers(n_group_servers);
+        Simulation::set_group_props(group_size_props);
         Simulation::set_max_caseload(max_caseload);
         Simulation::set_arr_lam(arr_lam);
         Simulation::set_pathways(pathways);
@@ -66,7 +70,9 @@ Simulation::Simulation(int n_epochs, std::vector<int> clinicians,
 
 // Setter methods
 void Simulation::set_n_epochs(int n){n_epochs = n;}
-void Simulation::set_clinicians(std::vector<int> c){clinicians = c;}
+void Simulation::set_n_servers(int n){n_servers = n;}
+void Simulation::set_group_servers(std::vector<int> n){n_group_servers = n;}
+void Simulation::set_group_props(std::vector<float> p){group_size_props = p;}
 void Simulation::set_max_caseload(int m){max_caseload = m;}
 void Simulation::set_arr_lam(double l){arr_lam = l;}
 void Simulation::set_pathways(std::vector<int> ps){pathways = ps;}
@@ -102,9 +108,16 @@ double Simulation::get_arr_age(){
 }
 
 void Simulation::generate_servers() {
-    for (int i = 0; i < clinicians.size(); i++) {
-        for (int j = 0; j < clinicians[i]; j++) {
-            servers.push_back(Server(max_caseload, wl, dl));
+    // generate individual servers
+    for (int i = 0; i < n_servers; i++) {
+        servers.push_back(Server(max_caseload, wl, dl));
+    }
+    // generate group servers
+    for (int i = 0; i < n_group_servers.size(); i++) {
+        for (int j = 0; j < group_size_props.size(); j++) {
+            for (int k = 0; k < rint(n_group_servers[i] * group_size_props[j]); k++) {
+                group_servers.push_back(GroupServer(i, pathways[i], j+1, wl, dl));
+            }
         }
     }
 }
@@ -127,12 +140,28 @@ void Simulation::generate_arrivals(int epoch) {
     // std::cout << "successfuly generated arrivals" << std::endl;
 }
 
+void Simulation::prefill_waitlist(int n_patients) {
+    // epoch is 0 -> could adjust to set a predefined wait time and make epoch negative
+    for (int i = 0; i < n_patients; i++) {
+        int pat_class = class_dstb(rng);
+        double arr_age = get_arr_age();
+        Patient pat = Patient(0, arr_age, pat_class, pathways[pat_class],
+                            wait_effects[pat_class], modality_effects[pat_class],
+                            modality_policies[pat_class], att_probs,
+                            rng);
+        wl.add_patient(pat, 0);
+    }
+}
+
 void Simulation::run() {
     auto start = std::chrono::high_resolution_clock::now();
     for (int epoch = 0; epoch < n_epochs; epoch++) {
         generate_arrivals(epoch);
         for (int i = 0; i < servers.size(); i++) {
             servers[i].process_epoch(epoch);
+        }
+        for (int i = 0; i < group_servers.size(); i++) {
+            group_servers[i].process_epoch(epoch);
         }
         if (waitlist_logging){stream_waitlist(epoch);}
     }
@@ -205,8 +234,13 @@ int main(int argc, char *argv[]){
     cxxopts::Options options("Service Duration Simulation", "Simulate service duration for multi-class, multi-server queueing system.");
     options.add_options()
         ("n,n_epochs", "Number of epochs", cxxopts::value<int>()->default_value("10000"))
-        ("c,clinicians", "Number of clinicians", cxxopts::value<std::vector<int>>()->default_value("80"))
-        ("m,max_caseload", "Maximum caseload per clinician", cxxopts::value<int>()->default_value("1"))
+        ("waitlist_prefill", "Number of clients to prefill onto the waitlist", cxxopts::value<int>()->default_value("0"))
+        ("c,servers", "Number of servers", cxxopts::value<int>()->default_value("80"))
+        ("n_group_servers", "Number of group servers for each pathway", 
+            cxxopts::value<std::vector<int>>()->default_value("0,0,0"))
+        ("group_size_props", "Proportion of group servers for each group size (1-4)",
+            cxxopts::value<std::vector<float>>()->default_value("0,0.33,0.33,0.33"))
+        ("m,max_caseload", "Maximum caseload per servers", cxxopts::value<int>()->default_value("1"))
         ("a,arr_lam", "Arrival rate lambda", cxxopts::value<double>()->default_value("10"))
         ("f,folder", "Output folder", cxxopts::value<std::string>()->default_value("test/"))
         ("p,pathways", "Class pathways", cxxopts::value<std::vector<int>>()->default_value("7,10,13"))
@@ -227,7 +261,10 @@ int main(int argc, char *argv[]){
     auto result = options.parse(argc, argv);
 
     int n_epochs = result["n_epochs"].as<int>();
-    std::vector<int> clinicians = result["clinicians"].as<std::vector<int>>();
+    int waitlist_prefill = result["waitlist_prefill"].as<int>();
+    int n_servers = result["servers"].as<int>();
+    std::vector<int> n_group_servers = result["n_group_servers"].as<std::vector<int>>();
+    std::vector<float> group_size_props = result["group_size_props"].as<std::vector<float>>();
     int max_caseload = result["max_caseload"].as<int>();
     double arr_lam = result["arr_lam"].as<double>();
     std::vector<double> probs = result["arrival_probs"].as<std::vector<double>>();
@@ -272,7 +309,9 @@ int main(int argc, char *argv[]){
         Waitlist wl = Waitlist(serv_path.size(), max_ax_age,
                                 priority_wlist, p_order,
                                 rng, dl);
-        Simulation sim = Simulation(n_epochs, clinicians, 
+        Simulation sim = Simulation(n_epochs, n_servers,
+                                    n_group_servers,
+                                    group_size_props,
                                     max_caseload, arr_lam,
                                     serv_path, wait_effects, 
                                     modality_effects, modality_policies,
@@ -282,6 +321,7 @@ int main(int argc, char *argv[]){
                                     waitlist_logging,
                                     dl, wl);
         sim.generate_servers();
+        sim.prefill_waitlist(waitlist_prefill); // prefill the waitlist
         sim.run();
         std::cout << "N admitted: " << sim.get_n_admitted() << " N discharged: " << sim.get_n_discharged() << " N on waitlist: " << sim.get_n_waitlist() << std::endl;
     }

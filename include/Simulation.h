@@ -6,10 +6,12 @@
 #include "Waitlist.h"
 #include "DischargeList.h"
 #include "Server.h"
+#include "GroupServer.h"
 
 class Simulation{
     public:
-        Simulation(int n_epochs, std::vector<int> clinicians,
+        Simulation(int n_epochs, int n_servers,
+                std::vector<int> n_group_servers, std::vector<float> group_size_props,
                 int max_caseload, double arr_lam, 
                 std::vector<int> pathways, std::vector<double> wait_effects, 
                 std::vector<double> modality_effects, std::vector<double> modality_policies,
@@ -21,6 +23,7 @@ class Simulation{
         
         void generate_servers();
         void generate_arrivals(int epoch);
+        void prefill_waitlist(int n_patients);
         void run();
         void write_parquet(std::string path);
         void write_statistics(std::string path);
@@ -32,7 +35,9 @@ class Simulation{
 
         // member-variable setters
         void set_n_epochs(int n_epochs);
-        void set_clinicians(std::vector<int> clin);
+        void set_n_servers(int n_servers);
+        void set_group_servers(std::vector<int> n);
+        void set_group_props(std::vector<float> p);
         void set_max_caseload(int max_caseload);
         void set_arr_lam(double arr_lam);
         void set_pathways(std::vector<int> pathways);
@@ -53,7 +58,11 @@ class Simulation{
         
     private:
         int n_epochs;
-        std::vector<int> clinicians;
+        int n_servers;
+        std::vector<Server> servers;
+        std::vector<int> n_group_servers;   // [0]: pathway index, [1]: number of servers
+        std::vector<float> group_size_props; // proportion of servers to be 2, 3, 4 person groups
+        std::vector<GroupServer> group_servers;
         int max_caseload;
         double arr_lam;
         std::vector<int> pathways; // map the integer key to string labels for classes outside of the simulation
@@ -67,7 +76,6 @@ class Simulation{
         Waitlist& wl;
         DischargeList& dl;
         int n_admitted = 0;
-        std::vector<Server> servers;
         std::discrete_distribution<> class_dstb;
         std::normal_distribution<> age_dstb;
         parquet::StreamWriter wl_os;

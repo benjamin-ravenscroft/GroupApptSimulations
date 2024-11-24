@@ -12,6 +12,7 @@ set(SOURCES
     src/Patient.cpp
     src/Server.cpp
     src/Waitlist.cpp
+    src/GroupServer.cpp
 )
 
 find_package(Arrow REQUIRED)
@@ -19,7 +20,7 @@ find_package(Parquet REQUIRED)
 
 add_executable(simulation ${SOURCES})
 target_link_libraries(simulation PRIVATE Arrow::arrow_shared ${PARQUET_SHARED_LIB})
-add_subdirectory(extern/cxxopts) 
+add_subdirectory(extern/cxxopts)
 target_include_directories(simulation PRIVATE cxxopts) 
 target_link_libraries(simulation PRIVATE cxxopts)
 
