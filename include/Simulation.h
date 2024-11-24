@@ -12,6 +12,7 @@ class Simulation{
     public:
         Simulation(int n_epochs, int n_servers,
                 std::vector<int> n_group_servers, std::vector<float> group_size_props,
+                std::vector<float> group_size_effects,
                 int max_caseload, double arr_lam, 
                 std::vector<int> pathways, std::vector<double> wait_effects, 
                 std::vector<double> modality_effects, std::vector<double> modality_policies,
@@ -38,6 +39,7 @@ class Simulation{
         void set_n_servers(int n_servers);
         void set_group_servers(std::vector<int> n);
         void set_group_props(std::vector<float> p);
+        void set_group_size_effects(std::vector<float> e);
         void set_max_caseload(int max_caseload);
         void set_arr_lam(double arr_lam);
         void set_pathways(std::vector<int> pathways);
@@ -62,6 +64,7 @@ class Simulation{
         std::vector<Server> servers;
         std::vector<int> n_group_servers;   // [0]: pathway index, [1]: number of servers
         std::vector<float> group_size_props; // proportion of servers to be 2, 3, 4 person groups
+        std::vector<float> group_size_effects;
         std::vector<GroupServer> group_servers;
         int max_caseload;
         double arr_lam;

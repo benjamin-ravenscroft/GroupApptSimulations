@@ -9,7 +9,9 @@ class GroupServer : public Server {
     public:
         // GroupServer(Waitlist &wl, DischargeList &dl);
         // GroupServer(int max_caseload, Waitlist &wl, DischargeList &dl);
-        GroupServer(int path, int path_len, int max_caseload, Waitlist &wl, DischargeList &dl);
+        GroupServer(int path, int path_len, int max_caseload,
+            float group_size_effect, 
+            Waitlist &wl, DischargeList &dl);
 
         ~GroupServer(){};
 

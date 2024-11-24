@@ -26,6 +26,7 @@ std::mt19937 rng(rd());
 
 Simulation::Simulation(int n_epochs, int n_servers,
                         std::vector<int> n_group_servers, std::vector<float> group_size_props,
+                        std::vector<float> group_size_effects,
                         int max_caseload, double arr_lam,
                         std::vector<int> pathways, std::vector<double> wait_effects,
                         std::vector<double> modality_effects, std::vector<double> modality_policies,
@@ -39,6 +40,7 @@ Simulation::Simulation(int n_epochs, int n_servers,
         Simulation::set_n_servers(n_servers);
         Simulation::set_group_servers(n_group_servers);
         Simulation::set_group_props(group_size_props);
+        Simulation::set_group_size_effects(group_size_effects);
         Simulation::set_max_caseload(max_caseload);
         Simulation::set_arr_lam(arr_lam);
         Simulation::set_pathways(pathways);
@@ -73,6 +75,7 @@ void Simulation::set_n_epochs(int n){n_epochs = n;}
 void Simulation::set_n_servers(int n){n_servers = n;}
 void Simulation::set_group_servers(std::vector<int> n){n_group_servers = n;}
 void Simulation::set_group_props(std::vector<float> p){group_size_props = p;}
+void Simulation::set_group_size_effects(std::vector<float> e){group_size_effects = e;}
 void Simulation::set_max_caseload(int m){max_caseload = m;}
 void Simulation::set_arr_lam(double l){arr_lam = l;}
 void Simulation::set_pathways(std::vector<int> ps){pathways = ps;}
@@ -116,7 +119,9 @@ void Simulation::generate_servers() {
     for (int i = 0; i < n_group_servers.size(); i++) {
         for (int j = 0; j < group_size_props.size(); j++) {
             for (int k = 0; k < rint(n_group_servers[i] * group_size_props[j]); k++) {
-                group_servers.push_back(GroupServer(i, pathways[i], j+1, wl, dl));
+                group_servers.push_back(GroupServer(i, pathways[i], j+1,
+                                        group_size_effects[j],
+                                        wl, dl));
             }
         }
     }
@@ -222,7 +227,7 @@ int utilization_to_servers(float utilization, std::vector<int> pathways,
                             std::vector<double> probs, double arr_lam){
     float mu = 0;
     for (int i = 0; i < pathways.size(); i++){
-        mu += probs[i]*arr_lam*pathways[i];
+        mu += probs[i] * arr_lam * pathways[i];
     }
     return ceil(mu/utilization);
 }
@@ -240,6 +245,8 @@ int main(int argc, char *argv[]){
             cxxopts::value<std::vector<int>>()->default_value("0,0,0"))
         ("group_size_props", "Proportion of group servers for each group size (1-4)",
             cxxopts::value<std::vector<float>>()->default_value("0,0.33,0.33,0.33"))
+        ("group_size_effects", "Effect of group size on the number of appointments needed",
+            cxxopts::value<std::vector<float>>()->default_value("0,0,0,0"))
         ("m,max_caseload", "Maximum caseload per servers", cxxopts::value<int>()->default_value("1"))
         ("a,arr_lam", "Arrival rate lambda", cxxopts::value<double>()->default_value("10"))
         ("f,folder", "Output folder", cxxopts::value<std::string>()->default_value("test/"))
@@ -265,6 +272,7 @@ int main(int argc, char *argv[]){
     int n_servers = result["servers"].as<int>();
     std::vector<int> n_group_servers = result["n_group_servers"].as<std::vector<int>>();
     std::vector<float> group_size_props = result["group_size_props"].as<std::vector<float>>();
+    std::vector<float> group_size_effects = result["group_size_effects"].as<std::vector<float>>();
     int max_caseload = result["max_caseload"].as<int>();
     double arr_lam = result["arr_lam"].as<double>();
     std::vector<double> probs = result["arrival_probs"].as<std::vector<double>>();
@@ -312,6 +320,7 @@ int main(int argc, char *argv[]){
         Simulation sim = Simulation(n_epochs, n_servers,
                                     n_group_servers,
                                     group_size_props,
+                                    group_size_effects,
                                     max_caseload, arr_lam,
                                     serv_path, wait_effects, 
                                     modality_effects, modality_policies,

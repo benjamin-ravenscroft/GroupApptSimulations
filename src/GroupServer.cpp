@@ -6,11 +6,12 @@
 // GroupServer::GroupServer(int max_caseload, Waitlist &wl, DischargeList &dl) : Server::Server(max_caseload,
 //                                                                                             wl,
 //                                                                                             dl) {};
-GroupServer::GroupServer(int path, int path_len, int max_caseload, 
+GroupServer::GroupServer(int path, int path_len, int max_caseload,
+        float group_size_effect,
         Waitlist &wl, DischargeList &dl) : Server::Server(max_caseload, wl, dl) {
 
     GroupServer::set_path(path);
-    GroupServer::set_path_len(path_len);
+    GroupServer::set_path_len(rint(path_len * (1 + group_size_effect)));
     GroupServer::set_n_appts(path_len);
 };
 
