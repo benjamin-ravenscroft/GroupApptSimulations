@@ -51,7 +51,7 @@ void GroupServer::process_epoch(int epoch) {
         capacity -= 1;  // capacity used even if patient advance canceled
         caseload.push_back(p);
     }
-    GroupServer::decrement_n_appts(); // decrement remaining appts by 1
+    GroupServer::decrement_n_appts();
     if (n_appts == 0) { // if group finished -> discharge all
         GroupServer::discharge_patients(epoch);
     }
